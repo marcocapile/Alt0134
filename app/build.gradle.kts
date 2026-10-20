@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "io.github.marcocapile.launchermanager"
+    namespace = "io.github.marcocapile.garbaggio"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "io.github.marcocapile.launchermanager"
+        applicationId = "io.github.marcocapile.garbaggio"
         minSdk = 21
         targetSdk = 35
         versionCode = 1

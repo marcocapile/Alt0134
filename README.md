@@ -1,6 +1,7 @@
-# Launcher Manager (Android)
+# Garbaggio
 
-A small Material 3 (Jetpack Compose) app that takes a device back to its stock launcher.
+Garbaggio is a small Material 3 (Jetpack Compose) app that takes a device back to its stock launcher,
+throwing out the ad-filled launchers that sneak onto phones (often ones belonging to older relatives).
 No root needed.
 
 1. **First launch** asks for access to the list of installed apps. On MIUI/HyperOS this
@@ -29,7 +30,13 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
 The GitHub Actions workflow `.github/workflows/build.yml` builds the
-debug and release APKs on every push and uploads them as the `launcher-manager-apk`
+debug and release APKs on every push and uploads them as the `garbaggio-apk`
 artifact.
 
 minSdk is 21 (Android 5.0).
+
+## Icon
+
+The engraved recycle-bin icon is drawn procedurally by `tools/icon/make_icon.py`
+(Python 3 with Pillow and NumPy). Re-run it from the repository root to regenerate the
+mipmaps and `docs/icon-512.png` (Play Store size).

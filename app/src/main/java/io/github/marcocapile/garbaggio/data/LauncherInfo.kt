@@ -1,4 +1,4 @@
-package io.github.marcocapile.launchermanager.data
+package io.github.marcocapile.garbaggio.data
 
 import android.content.ComponentName
 import androidx.compose.ui.graphics.ImageBitmap

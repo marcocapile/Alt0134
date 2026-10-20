@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "LauncherManager"
+rootProject.name = "Garbaggio"
 include(":app")

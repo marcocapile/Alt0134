@@ -19,7 +19,7 @@ jobs:
         run: ./gradlew --no-daemon assembleDebug assembleRelease lintDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: launcher-manager-apk
+          name: garbaggio-apk
           path: |
             app/build/outputs/apk/debug/*.apk
             app/build/outputs/apk/release/*.apk

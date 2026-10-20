@@ -1,11 +1,11 @@
-package io.github.marcocapile.launchermanager.system
+package io.github.marcocapile.garbaggio.system
 
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import io.github.marcocapile.launchermanager.data.LauncherInfo
+import io.github.marcocapile.garbaggio.data.LauncherInfo
 
 /** System screens used to manage launchers without any special privileges. */
 object LauncherActions {

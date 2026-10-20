@@ -1,4 +1,4 @@
-package io.github.marcocapile.launchermanager.system
+package io.github.marcocapile.garbaggio.system
 
 import android.content.Context
 import android.content.pm.PackageManager

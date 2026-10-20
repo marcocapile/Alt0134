@@ -1,11 +1,11 @@
-package io.github.marcocapile.launchermanager.ui
+package io.github.marcocapile.garbaggio.ui
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.marcocapile.launchermanager.data.LauncherInfo
-import io.github.marcocapile.launchermanager.data.LauncherRepository
-import io.github.marcocapile.launchermanager.system.AppListAccess
+import io.github.marcocapile.garbaggio.data.LauncherInfo
+import io.github.marcocapile.garbaggio.data.LauncherRepository
+import io.github.marcocapile.garbaggio.system.AppListAccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow

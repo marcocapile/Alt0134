@@ -1,4 +1,4 @@
-package io.github.marcocapile.launchermanager.ui
+package io.github.marcocapile.garbaggio.ui
 
 import android.content.ActivityNotFoundException
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -77,6 +77,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -84,9 +85,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import io.github.marcocapile.launchermanager.data.LauncherInfo
-import io.github.marcocapile.launchermanager.system.LauncherActions
-import io.github.marcocapile.launchermanager.system.UninstallPackageContract
+import io.github.marcocapile.garbaggio.R
+import io.github.marcocapile.garbaggio.data.LauncherInfo
+import io.github.marcocapile.garbaggio.system.LauncherActions
+import io.github.marcocapile.garbaggio.system.UninstallPackageContract
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -133,7 +135,7 @@ fun LauncherScreen(viewModel: LauncherViewModel = viewModel()) {
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = { Text("Launcher Manager") },
+                title = { Text(stringResource(R.string.app_name)) },
                 scrollBehavior = scrollBehavior,
                 actions = {
                     if (state.accessGranted) {
@@ -254,7 +256,7 @@ private fun AccessScreen(modifier: Modifier, onAllow: () -> Unit) {
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            "Launcher Manager needs to see which apps are installed to find every home-screen " +
+            "Garbaggio needs to see which apps are installed to find every home-screen " +
                 "launcher, so you can remove the ones you don't want and go back to the stock " +
                 "launcher. Nothing leaves your device.",
             style = MaterialTheme.typography.bodyMedium,

@@ -1,4 +1,4 @@
-package io.github.marcocapile.launchermanager.ui.theme
+package io.github.marcocapile.garbaggio.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -12,29 +12,29 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF3F51B5),
+    primary = Color(0xFFB3261E),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFDEE0FF),
-    onPrimaryContainer = Color(0xFF00105C),
-    secondary = Color(0xFF5B5D72),
-    secondaryContainer = Color(0xFFE0E1F9),
-    tertiary = Color(0xFF77536D),
+    primaryContainer = Color(0xFFFFDAD5),
+    onPrimaryContainer = Color(0xFF410001),
+    secondary = Color(0xFF775651),
+    secondaryContainer = Color(0xFFFFDAD5),
+    tertiary = Color(0xFF705C2E),
     error = Color(0xFFBA1A1A),
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFFBAC3FF),
-    onPrimary = Color(0xFF08218A),
-    primaryContainer = Color(0xFF2A3BA0),
-    onPrimaryContainer = Color(0xFFDEE0FF),
-    secondary = Color(0xFFC4C5DD),
-    secondaryContainer = Color(0xFF434659),
-    tertiary = Color(0xFFE6BAD7),
+    primary = Color(0xFFFFB4A9),
+    onPrimary = Color(0xFF690003),
+    primaryContainer = Color(0xFF8C1D18),
+    onPrimaryContainer = Color(0xFFFFDAD5),
+    secondary = Color(0xFFE7BDB6),
+    secondaryContainer = Color(0xFF5D3F3B),
+    tertiary = Color(0xFFDFC38C),
     error = Color(0xFFFFB4AB),
 )
 
 @Composable
-fun LauncherManagerTheme(
+fun GarbaggioTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
