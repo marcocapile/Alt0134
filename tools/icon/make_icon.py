@@ -1,4 +1,4 @@
-"""Draws the Garbaggio launcher icon: an engraved, pencil-hatched recycle bin on red.
+"""Draws the Garbaggio launcher icon: an engraved, pencil-hatched rubbish bin on red.
 
 Run from the repository root:  python3 tools/icon/make_icon.py
 Writes the mipmap PNGs under app/src/main/res and a 512 px store icon under docs/.
@@ -9,7 +9,7 @@ import random
 
 import numpy as np
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter
+from PIL import Image, ImageChops, ImageDraw
 
 S = 2048                 # working canvas; coordinates below are in 1024 units
 K = S / 1024
@@ -94,15 +94,35 @@ def lerp(a, b, t):
 
 
 # ---------------------------------------------------------------- geometry
+# The can is seen from slightly above, so every horizontal edge is the front half of an
+# ellipse. Lower ellipses are further below eye level and open up more (bigger sag).
 BODY_TOP, BODY_BOT = 418, 742
 BODY_TL, BODY_TR = 356, 668
 BODY_BL, BODY_BR = 392, 632
-body_pts = [(BODY_TL, BODY_TOP), (BODY_TR, BODY_TOP), (BODY_BR, BODY_BOT - 14),
-            (BODY_BR - 14, BODY_BOT), (BODY_BL + 14, BODY_BOT), (BODY_BL, BODY_BOT - 14)]
-rim_pts = [(344, 398), (680, 398), (676, 432), (348, 432)]
-lid_pts = [(338, 392), (686, 392), (676, 352), (656, 336), (368, 336), (348, 352)]
-handle_outer = [(456, 336), (456, 300), (468, 290), (556, 290), (568, 300), (568, 336)]
-handle_inner = [(478, 336), (478, 310), (546, 310), (546, 336)]
+SAG_TOP, SAG_BOT = 15, 24
+LID_TOP, LID_BOT = 348, 392
+RIM_TOP, RIM_BOT = 398, 432
+
+
+def arc(x0, x1, y, sag, n=48):
+    """Front half of an ellipse from x0 to x1, dipping `sag` below y in the middle."""
+    return [(lerp(x0, x1, i / n), y + sag * math.sin(math.pi * i / n)) for i in range(n + 1)]
+
+
+def sag_at(y):
+    return lerp(SAG_TOP, SAG_BOT, (y - BODY_TOP) / (BODY_BOT - BODY_TOP))
+
+
+body_bottom = arc(BODY_BL, BODY_BR, BODY_BOT, SAG_BOT)
+body_pts = arc(BODY_TL, BODY_TR, BODY_TOP, SAG_TOP) + body_bottom[::-1]
+rim_bottom = arc(348, 676, RIM_BOT, 15)
+rim_pts = arc(344, 680, RIM_TOP, 14) + rim_bottom[::-1]
+lid_top_back = [(x, LID_TOP - (y - LID_TOP)) for x, y in arc(368, 656, LID_TOP, 11)]
+lid_bottom = arc(338, 686, LID_BOT, 13)
+lid_pts = lid_top_back + lid_bottom[::-1]
+lid_top_front = arc(368, 656, LID_TOP, 11)
+handle_outer = [(456, 350), (456, 300), (468, 290), (556, 290), (568, 300), (568, 350)]
+handle_inner = [(478, 350), (478, 310), (546, 310), (546, 350)]
 
 
 def body_x(t, y):
@@ -116,20 +136,24 @@ pd = ImageDraw.Draw(paper)
 idraw = ImageDraw.Draw(ink)
 
 # ---------------------------------------------------------------- ground shadow
-shadow = ellipse_mask(512, 748, 230, 30)
+shadow = ellipse_mask(512, 762, 232, 30)
 ink = ImageChops.lighter(ink, hatch(shadow, 0, 7, 3.2, jitter=0.3))
-ink = ImageChops.lighter(ink, hatch(ellipse_mask(530, 748, 170, 18), 0, 7, 3.2, jitter=0.3))
+ink = ImageChops.lighter(ink, hatch(ellipse_mask(530, 764, 170, 18), 0, 7, 3.2, jitter=0.3))
 idraw = ImageDraw.Draw(ink)
 
 # ---------------------------------------------------------------- paper fills
-for shape in (body_pts, rim_pts, lid_pts, handle_outer):
+for shape in (body_pts, rim_pts, handle_outer):
     pd.polygon([p(*q) for q in shape], fill=255)
 pd.polygon([p(*q) for q in handle_inner], fill=0)
+pd.polygon([p(*q) for q in lid_pts], fill=255)  # the lid shows through the handle's hole
 
-body = polygon_mask(body_pts)
-rim = polygon_mask(rim_pts)
 lid = polygon_mask(lid_pts)
 handle = ImageChops.subtract(polygon_mask(handle_outer), polygon_mask(handle_inner))
+handle = ImageChops.subtract(handle, lid)
+rim = ImageChops.subtract(polygon_mask(rim_pts), lid)
+body = ImageChops.subtract(ImageChops.subtract(polygon_mask(body_pts), rim), lid)
+lid_side = ImageChops.subtract(lid, ellipse_mask(512, LID_TOP, 144, 11))
+lid_top = ImageChops.subtract(ellipse_mask(512, LID_TOP, 144, 11), polygon_mask(handle_outer))
 
 # ---------------------------------------------------------------- shading
 def darkness(t):
@@ -160,17 +184,19 @@ def contour_hatch(x_at, y0, y1, t_min=0.0, t_max=1.0, base=7.0, width=2.4, sag=0
     return layer
 
 
-def arc_hatch(x_at, y0, y1, step, t_from, width, sag=10.0, t_to=1.0, fade=0.12):
+def arc_hatch(x_at, y0, y1, step, t_from, width, sag=sag_at, t_to=1.0, fade=0.12):
     """Curved cross-lines wrapping around the cylinder, starting at a ragged t_from."""
     layer = new_layer()
     d = ImageDraw.Draw(layer)
+    sag_fn = sag if callable(sag) else (lambda _y: sag)
     y = y0
     while y < y1:
+        bend = sag_fn(y)
         start = t_from + rng.uniform(-fade, fade)
         pts = []
         t = start
         while t <= t_to:
-            pts.append(p(x_at(t, y), y + sag * math.sin(math.pi * t) + rng.uniform(-0.4, 0.4)))
+            pts.append(p(x_at(t, y), y + bend * math.sin(math.pi * t) + rng.uniform(-0.4, 0.4)))
             t += 0.02
         if len(pts) > 1:
             d.line(pts, fill=255, width=max(1, int(width * K)))
@@ -179,7 +205,7 @@ def arc_hatch(x_at, y0, y1, step, t_from, width, sag=10.0, t_to=1.0, fade=0.12):
 
 
 def lid_x(t, y):
-    f = (y - 336) / (392 - 336)
+    f = (y - LID_TOP) / (LID_BOT - LID_TOP)
     return lerp(lerp(368, 338, f), lerp(656, 686, f), t)
 
 
@@ -188,83 +214,43 @@ def rim_x(t, y):
 
 
 layers = [
-    contour_hatch(body_x, 436, 738, base=6.5, width=2.6),
-    arc_hatch(body_x, 446, 736, 9, 0.62, 2.0),
-    arc_hatch(body_x, 446, 736, 9, 0.84, 2.2, fade=0.05),
-    arc_hatch(body_x, 434, 470, 5.5, 0.0, 2.2, sag=6, fade=0.0),   # shadow under the rim
-    contour_hatch(rim_x, 400, 430, base=5.0, width=2.2),
-    contour_hatch(lid_x, 352, 390, base=4.5, width=2.6),
-    arc_hatch(lid_x, 380, 391, 4, 0.0, 2.2, sag=3, fade=0.0),   # shade along the lid's lower lip
-    arc_hatch(lid_x, 340, 352, 5, 0.7, 2.0, sag=4),
-    contour_hatch(lambda t, y: lerp(456, 568, t), 292, 334, t_min=0.55, base=5.0, width=2.0),
+    (contour_hatch(body_x, 430, 770, base=6.5, width=2.6), body),
+    (arc_hatch(body_x, 440, 742, 9, 0.62, 2.0), body),
+    (arc_hatch(body_x, 440, 742, 9, 0.84, 2.2, fade=0.05), body),
+    (arc_hatch(body_x, 424, 474, 5.5, 0.0, 2.2, fade=0.0), body),            # shadow under the rim
+    (arc_hatch(body_x, 712, 746, 6, 0.0, 2.0, fade=0.0), body),              # darker base of the can
+    (contour_hatch(lambda t, y: lerp(346, 678, t), 396, 450, base=5.0, width=2.2), rim),
+    (arc_hatch(lambda t, y: lerp(346, 678, t), 424, 434, 4, 0.0, 2.0, sag=15, fade=0.0), rim),
+    (contour_hatch(lid_x, 344, 406, base=4.5, width=2.6), lid_side),
+    (arc_hatch(lid_x, 382, 394, 4, 0.0, 2.2, sag=13, fade=0.0), lid_side),   # lid's lower lip
+    (arc_hatch(lambda t, y: lerp(368, 656, t), 338, 360, 4.5, 0.62, 1.8, sag=0, fade=0.08), lid_top),
+    (contour_hatch(lambda t, y: lerp(456, 568, t), 292, 350, t_min=0.55, base=5.0, width=2.0), handle),
 ]
-for layer, mask in zip(layers, (body, body, body, body, rim, lid, lid, lid, handle)):
+for layer, mask in layers:
     ink = ImageChops.lighter(ink, ImageChops.multiply(layer, mask))
 idraw = ImageDraw.Draw(ink)
 
 # ---------------------------------------------------------------- ribs
-for t in (0.1, 0.2, 0.8, 0.9):
-    top = (body_x(t, 446), 446)
-    bot = (body_x(t, 718), 718)
-    pencil(idraw, [top, bot], 4.2)
-    # short shadow strokes on the right side of each groove
-    steps = 22
+# Evenly spaced around the can, so they bunch together toward the sides.
+for k in range(8):
+    t = (1 - math.cos(math.pi * (k + 0.5) / 8)) / 2
+    y_top = 444 + sag_at(444) * math.sin(math.pi * t)
+    y_bot = 716 + sag_at(716) * math.sin(math.pi * t)
+    pencil(idraw, [(body_x(t, y_top), y_top), (body_x(t, y_bot), y_bot)], 3.6)
+    steps = 20
     for i in range(steps):
-        f = i / steps
-        y = lerp(450, 712, f)
-        x = body_x(t, y) + 5
-        pencil(idraw, [(x, y), (x + 9, y + 8)], 2.0, passes=1, jitter=0.4)
+        y = lerp(y_top + 4, y_bot - 8, i / steps)
+        x = body_x(t, y) + 4
+        pencil(idraw, [(x, y), (x + 7, y + 6)], 1.8, passes=1, jitter=0.4)
 
 # ---------------------------------------------------------------- outlines
-outline(idraw, body_pts, 9)
+outline(idraw, [(BODY_TL, BODY_TOP + 20), (BODY_BL, BODY_BOT)] + body_bottom[1:] + [(BODY_TR, BODY_TOP + 20)], 9,
+        closed=False)
 outline(idraw, rim_pts, 7.5)
 outline(idraw, lid_pts, 9)
+pencil(idraw, lid_top_front, 6.0)  # front edge of the lid's top face
 outline(idraw, handle_outer, 6.5, closed=False)
-outline(idraw, handle_inner[:2] + handle_inner[2:], 5.5, closed=False)
-pencil(idraw, [(350, 392), (674, 392)], 6.0)  # lid seam
-
-# ---------------------------------------------------------------- recycle symbol
-CX, CY, R = 512, 590, 92
-verts = [(CX + R * math.cos(math.radians(a)), CY + R * math.sin(math.radians(a))) for a in (-90, 30, 150)]
-sym = new_layer()
-sd = ImageDraw.Draw(sym)
-for k in range(3):
-    a, b = verts[k], verts[(k + 1) % 3]
-    ux, uy = (b[0] - a[0]), (b[1] - a[1])
-    ln = math.hypot(ux, uy)
-    ux, uy = ux / ln, uy / ln
-    nx, ny = -uy, ux
-    # nudge the band toward the inside of the triangle
-    ix, iy = CX - (a[0] + b[0]) / 2, CY - (a[1] + b[1]) / 2
-    il = math.hypot(ix, iy)
-    sx, sy = ix / il * 10, iy / il * 10
-
-    def at(f, w):
-        return (a[0] + ux * ln * f + nx * w + sx, a[1] + uy * ln * f + ny * w + sy)
-
-    band = [at(0.17, -10), at(0.58, -10), at(0.58, 10), at(0.17, 10)]
-    head = [at(0.58, -24), at(0.83, 0), at(0.58, 24)]
-    sd.polygon([p(*q) for q in band], fill=255)
-    sd.polygon([p(*q) for q in head], fill=255)
-# white halo so the symbol reads against hatching
-halo = sym.filter(ImageFilter.MaxFilter(int(14 * K) | 1))
-ink = ImageChops.subtract(ink, halo)
-ink = ImageChops.lighter(ink, sym)
-idraw = ImageDraw.Draw(ink)
-
-# ---------------------------------------------------------------- a fly, for the smell
-FX, FY = 700, 286
-idraw.ellipse([p(FX - 9, FY - 6), p(FX + 9, FY + 6)], fill=255)
-idraw.ellipse([p(FX + 6, FY - 5), p(FX + 15, FY + 4)], fill=255)
-for wx in (-8, 2):
-    idraw.ellipse([p(FX + wx - 6, FY - 22), p(FX + wx + 6, FY - 4)], outline=255, width=int(2.4 * K))
-loop = []
-for i in range(60):
-    t = i / 59
-    ang = t * 2.4 * math.pi
-    loop.append((FX - 22 - t * 70 + 16 * math.cos(ang), FY + 18 + t * 26 + 16 * math.sin(ang)))
-for i in range(0, len(loop) - 2, 4):
-    pencil(idraw, loop[i:i + 3], 2.4, passes=1, jitter=0.3)
+outline(idraw, handle_inner, 5.5, closed=False)
 
 # ---------------------------------------------------------------- compose
 grain = Image.effect_noise((S, S), 18).point(lambda v: max(0, v - 110))
@@ -295,7 +281,7 @@ def legacy(size):
     return out
 
 
-def zoom(img, factor=1.08):
+def zoom(img, factor=1.12):
     """Enlarges the drawing inside the adaptive icon's safe zone."""
     inset = int(S * (1 - 1 / factor) / 2)
     return img.crop((inset, inset, S - inset, S - inset)).resize((S, S), Image.LANCZOS)

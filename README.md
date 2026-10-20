@@ -37,6 +37,6 @@ minSdk is 21 (Android 5.0).
 
 ## Icon
 
-The engraved recycle-bin icon is drawn procedurally by `tools/icon/make_icon.py`
+The engraved rubbish-bin icon is drawn procedurally by `tools/icon/make_icon.py`
 (Python 3 with Pillow and NumPy). Re-run it from the repository root to regenerate the
 mipmaps and `docs/icon-512.png` (Play Store size).
