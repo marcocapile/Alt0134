@@ -121,8 +121,8 @@ lid_top_back = [(x, LID_TOP - (y - LID_TOP)) for x, y in arc(368, 656, LID_TOP, 
 lid_bottom = arc(338, 686, LID_BOT, 13)
 lid_pts = lid_top_back + lid_bottom[::-1]
 lid_top_front = arc(368, 656, LID_TOP, 11)
-handle_outer = [(456, 350), (456, 300), (468, 290), (556, 290), (568, 300), (568, 350)]
-handle_inner = [(478, 350), (478, 310), (546, 310), (546, 350)]
+handle_outer = [(456, 352), (456, 322), (466, 314), (558, 314), (568, 322), (568, 352)]
+handle_inner = [(478, 352), (478, 330), (546, 330), (546, 352)]
 
 
 def body_x(t, y):
@@ -135,21 +135,14 @@ ink = new_layer()
 pd = ImageDraw.Draw(paper)
 idraw = ImageDraw.Draw(ink)
 
-# ---------------------------------------------------------------- ground shadow
-shadow = ellipse_mask(512, 762, 232, 30)
-ink = ImageChops.lighter(ink, hatch(shadow, 0, 7, 3.2, jitter=0.3))
-ink = ImageChops.lighter(ink, hatch(ellipse_mask(530, 764, 170, 18), 0, 7, 3.2, jitter=0.3))
-idraw = ImageDraw.Draw(ink)
-
 # ---------------------------------------------------------------- paper fills
-for shape in (body_pts, rim_pts, handle_outer):
+for shape in (body_pts, rim_pts, lid_pts, handle_outer):
     pd.polygon([p(*q) for q in shape], fill=255)
 pd.polygon([p(*q) for q in handle_inner], fill=0)
 pd.polygon([p(*q) for q in lid_pts], fill=255)  # the lid shows through the handle's hole
 
 lid = polygon_mask(lid_pts)
 handle = ImageChops.subtract(polygon_mask(handle_outer), polygon_mask(handle_inner))
-handle = ImageChops.subtract(handle, lid)
 rim = ImageChops.subtract(polygon_mask(rim_pts), lid)
 body = ImageChops.subtract(ImageChops.subtract(polygon_mask(body_pts), rim), lid)
 lid_side = ImageChops.subtract(lid, ellipse_mask(512, LID_TOP, 144, 11))
@@ -224,10 +217,11 @@ layers = [
     (contour_hatch(lid_x, 344, 406, base=4.5, width=2.6), lid_side),
     (arc_hatch(lid_x, 382, 394, 4, 0.0, 2.2, sag=13, fade=0.0), lid_side),   # lid's lower lip
     (arc_hatch(lambda t, y: lerp(368, 656, t), 338, 360, 4.5, 0.62, 1.8, sag=0, fade=0.08), lid_top),
-    (contour_hatch(lambda t, y: lerp(456, 568, t), 292, 350, t_min=0.55, base=5.0, width=2.0), handle),
+    (contour_hatch(lambda t, y: lerp(456, 568, t), 314, 352, t_min=0.55, base=5.0, width=2.0), handle),
 ]
 for layer, mask in layers:
     ink = ImageChops.lighter(ink, ImageChops.multiply(layer, mask))
+handle_hatch = ImageChops.multiply(layers[-1][0], layers[-1][1])
 idraw = ImageDraw.Draw(ink)
 
 # ---------------------------------------------------------------- ribs
@@ -249,6 +243,9 @@ outline(idraw, [(BODY_TL, BODY_TOP + 20), (BODY_BL, BODY_BOT)] + body_bottom[1:]
 outline(idraw, rim_pts, 7.5)
 outline(idraw, lid_pts, 9)
 pencil(idraw, lid_top_front, 6.0)  # front edge of the lid's top face
+# The handle stands in front of the lid's far edge, so hide whatever is behind it.
+ink = ImageChops.subtract(ink, ImageChops.subtract(handle, handle_hatch))
+idraw = ImageDraw.Draw(ink)
 outline(idraw, handle_outer, 6.5, closed=False)
 outline(idraw, handle_inner, 5.5, closed=False)
 
