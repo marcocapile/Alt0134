@@ -12,8 +12,10 @@ android {
         applicationId = "io.github.marcocapile.garbaggio"
         minSdk = 21
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        // CI builds count up so updates install cleanly and launchers refresh the cached icon.
+        val build = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = build
+        versionName = "1.0.$build"
         vectorDrawables { useSupportLibrary = true }
     }
 
